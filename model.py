@@ -15,9 +15,10 @@ class Node:
         self.value = value
 
 class DecisionTree:
-    def __init__(self, min_samples_split=2, max_depth=2):
+    def __init__(self, min_samples_split=2, max_depth=2, use_feature_sampling=False):
         self.min_samples_split = min_samples_split
         self.max_depth = max_depth
+        self.use_feature_sampling = use_feature_sampling
 
     def build_tree(self, dataset, curr_depth=0):
         X, y = dataset[:, :-1], dataset[:, -1]
@@ -38,7 +39,15 @@ class DecisionTree:
     def best_split(self, dataset, n_features):
         best_split = {'feature_idx': None, 'threshold': None, 'info_gain': -1, 'left_dataset': None, 'right_dataset': None}
 
-        for feature_idx in range(n_features):
+        
+
+        if self.use_feature_sampling:
+            feature_indices = np.random.choice(n_features, max(1, int(np.sqrt(n_features))))
+        else:
+            feature_indices = range(n_features)
+
+        for feature_idx in feature_indices:
+        # for feature_idx in range(n_features):
             feature_values = dataset[:, feature_idx]
             thresholds = np.unique(feature_values)
 
@@ -91,7 +100,7 @@ class DecisionTree:
         return predictions
     
     def predict_class(self, row, node):
-        if node.value != None:
+        if node.value is not None:
             return node.value
         
         feature_val = row[node.feature_idx]
@@ -133,7 +142,7 @@ class RandomForest:
     def fit(self, X, y):
         self.trees = []
         for _ in range(self.n_estimators):
-            tree = DecisionTree(min_samples_split=self.min_samples_split, max_depth=self.max_depth)
+            tree = DecisionTree(min_samples_split=self.min_samples_split, max_depth=self.max_depth, use_feature_sampling=True)
             X_sample, y_sample = self.bootstrap_sample(X, y)
             tree.fit(X_sample, y_sample)
             self.trees.append(tree)
